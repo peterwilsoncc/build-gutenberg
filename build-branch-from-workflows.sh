@@ -15,12 +15,47 @@ git fetch;
 git checkout $BRANCH;
 git pull;
 
-# Get the point at which the branch diverted from trunk.
-MERGE_BASE=$(git merge-base trunk HEAD);
-echo "Merge base: $MERGE_BASE";
 
-# Get commits from last 100 days
-git log --since="93 days ago" --pretty=format:"%H" > $CURRENT_DIR/log-files/$BRANCH_FILE_NAME-workflow-commits.txt;
+## If the branch name begins with "release/" then it was forked from trunk.
+if [[ $BRANCH == release/* ]]; then
+	FORK_ORIGIN="trunk";
+
+	MERGE_BASE=$(git merge-base HEAD trunk);
+	echo "Merge base: $MERGE_BASE";
+
+## Else if the branch name begins with "wp/" then it was forked from a release branch.
+elif [[ $BRANCH == wp/* ]]; then
+	## Search through branch names begining with "releaase" to get the fork origin.
+	RELEASE_BRANCHES=$(git branch | grep "release/" | grep -v "HEAD" | grep -v "trunk");
+	SORTED_RELEASE_BRANCHES=$(echo $RELEASE_BRANCHES | tr ' ' '\n' | sort -rV | tr '\n' ' ');
+
+	# echo "Sorted branches: $SORTED_RELEASE_BRANCHES";
+	# exit;
+
+	for branch in $SORTED_RELEASE_BRANCHES; do
+		# Is HEAD a fork of the branch?
+		# Get the merge base between the branch and HEAD.
+		mergeBase=$(git merge-base --fork-point $branch HEAD);
+
+		# If no merge base, then HEAD is not a fork of the branch.
+		if [ -z "$mergeBase" ]; then
+			continue;
+		fi
+
+		echo "Found fork origin: $branch";
+		FORK_ORIGIN=$branch;
+		echo "Merge base: $mergeBase";
+		break;
+	done
+fi
+
+echo "Fork origin: $FORK_ORIGIN";
+echo "Merge base: $MERGE_BASE";
+# exit;
+
+
+# Get the commits from the merge base to HEAD.
+git log $MERGE_BASE..HEAD --pretty=format:"%H" > $CURRENT_DIR/log-files/$BRANCH_FILE_NAME-workflow-commits.txt;
 # Add new line to the end of the file.
 echo "" >> $CURRENT_DIR/log-files/$BRANCH_FILE_NAME-workflow-commits.txt;
 
@@ -161,9 +196,6 @@ while read commit; do
 	echo "Commit: $commit";
 	echo "is tagged with: ";
 	echo $commitTags;
-	echo "------";
-	git --no-pager tag --points-at $commit;
-	echo "------";
 
 
 	# continue;
@@ -233,6 +265,19 @@ while read commit; do
 
 	# Tag the commit with the tags.
 	for commitTag in $commitTags; do
+		# If the tag begins with "v" and the branch begins with "wp/" then skip it.
+		if [[ $commitTag == v* && $BRANCH == wp/* ]]; then
+			echo "Skipping tag $commitTag for commit $commit";
+			continue;
+		fi
+
+		# If the tag already exists then skip it.
+		if [[ $(git tag --list $commitTag) ]]; then
+			echo "Tag $commitTag already exists for commit $commit";
+			continue;
+		fi
+
+
 		echo "Tagging commit $commit with tag $commitTag";
 
 		git tag --no-sign -f $commitTag;
