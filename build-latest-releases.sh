@@ -73,6 +73,9 @@ for version in "${MAJOR_VERSIONS[@]}"; do
 
   echo "Branch: $branch"
   echo "Branch file name: $branch_file_name"
+
+  # Call the build script with the branch name.
+  $CURRENT_DIR/build-branch-from-workflows.sh $branch
 done
 
 

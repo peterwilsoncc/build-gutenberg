@@ -9,50 +9,14 @@ BRANCH_FILE_NAME=$(echo $BRANCH | sed 's/\//-/g');
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
+# Include the functions file.
+source $CURRENT_DIR/functions.sh
+
 # ## Check out the branch in the gutenberg directory.
 cd $CURRENT_DIR/gutenberg-dev;
 git fetch;
 git checkout $BRANCH;
 git pull;
-
-
-## If the branch name begins with "release/" then it was forked from trunk.
-if [[ $BRANCH == release/* ]]; then
-	FORK_ORIGIN="trunk";
-
-	MERGE_BASE=$(git merge-base HEAD trunk);
-	echo "Merge base: $MERGE_BASE";
-
-## Else if the branch name begins with "wp/" then it was forked from a release branch.
-elif [[ $BRANCH == wp/* ]]; then
-	## Search through branch names begining with "releaase" to get the fork origin.
-	RELEASE_BRANCHES=$(git branch | grep "release/" | grep -v "HEAD" | grep -v "trunk");
-	SORTED_RELEASE_BRANCHES=$(echo $RELEASE_BRANCHES | tr ' ' '\n' | sort -rV | tr '\n' ' ');
-
-	# echo "Sorted branches: $SORTED_RELEASE_BRANCHES";
-	# exit;
-
-	for branch in $SORTED_RELEASE_BRANCHES; do
-		# Is HEAD a fork of the branch?
-		# Get the merge base between the branch and HEAD.
-		mergeBase=$(git merge-base --fork-point $branch HEAD);
-
-		# If no merge base, then HEAD is not a fork of the branch.
-		if [ -z "$mergeBase" ]; then
-			continue;
-		fi
-
-		echo "Found fork origin: $branch";
-		FORK_ORIGIN=$branch;
-		echo "Merge base: $mergeBase";
-		break;
-	done
-fi
-
-echo "Fork origin: $FORK_ORIGIN";
-echo "Merge base: $MERGE_BASE";
-# exit;
-
 
 # Get the commits from the merge base to HEAD.
 git log $MERGE_BASE..HEAD --pretty=format:"%H" > $CURRENT_DIR/log-files/$BRANCH_FILE_NAME-workflow-commits.txt;
@@ -93,13 +57,21 @@ if [[ $(git branch --list $BRANCH) ]]; then
 	isFirst=false;
 else
 
+	# The branch does not exist, so we need to find the fork point.
 	cd $CURRENT_DIR/plugins/gutenberg-build;
+
+	# Get the fork origin (trunk for release branches, release/* for wp branches)
+	MERGE_BASE=$(fork_origin $BRANCH);
+
+	# Ensure we are still in the build version
+	cd $CURRENT_DIR/plugins/gutenberg-build;
+
 	# Search the log for the commit containing a reference to the merge base.
-	commitFromBuiltTrunk=$(git log --grep="Source: https://github.com/WordPress/gutenberg/commit/$MERGE_BASE" --pretty=%H trunk);
+	commitFromBuiltTrunk=$(git log --grep="Source: https://github.com/WordPress/gutenberg/commit/$MERGE_BASE" --pretty=%H --all);
 
 	# If the commit source line is empty, then the branch is new.
 	if [ -z "$commitFromBuiltTrunk" ]; then
-		echo "No known common commit between trunk and $BRANCH";
+		echo "No known fork point for $BRANCH";
 
 
 		# Hard delete the branch
@@ -113,8 +85,7 @@ else
 
 		isFirst=true;
 	else
-		echo "Found common commit between trunk and $BRANCH: $commitFromBuiltTrunk";
-
+		echo "Found common fork point for $BRANCH: $commitFromBuiltTrunk";
 
 		# Create the branch from commitFromBuiltTrunk
 		git checkout -b $BRANCH $commitFromBuiltTrunk;
