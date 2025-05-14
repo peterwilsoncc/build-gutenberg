@@ -148,6 +148,9 @@ while read commit; do
 		continue;
 	fi
 
+	# Get the short hash of the current commit.
+	commitShortHash=$(git rev-parse --short HEAD);
+
 	git reset --hard;
 	git clean -xdf .;
 
@@ -227,6 +230,17 @@ while read commit; do
 
 	# Extract the gutenberg.zip file to the gutenberg-build directory
 	unzip -o $CURRENT_DIR/gutenberg-zip/gutenberg-plugin/gutenberg.zip -d $CURRENT_DIR/plugins/gutenberg-build;
+
+	# Replace the readme file with the custom version.
+	rm $CURRENT_DIR/plugins/gutenberg-build/README.md;
+	cp $CURRENT_DIR/_replacement-readme.md $CURRENT_DIR/plugins/gutenberg-build/README.md;
+
+	## Search and replace the %%COMMIT%% with the commit hash in the readme file.
+	sed -i '' "s/%%COMMIT%%/$commit/g" $CURRENT_DIR/plugins/gutenberg-build/README.md;
+	# Search and replace the %%COMMIT_SHORT%% with the commit short hash in the readme file.
+	sed -i '' "s/%%COMMIT_SHORT%%/$commitShortHash/g" $CURRENT_DIR/plugins/gutenberg-build/README.md;
+	# Search and replace the %%BRANCH%% with the branch name in the readme file.
+	sed -i '' "s/%%BRANCH%%/$BRANCH/g" $CURRENT_DIR/plugins/gutenberg-build/README.md;
 
 	# Add all the files to the git repository
 	git add .
