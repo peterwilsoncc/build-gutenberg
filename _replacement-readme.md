@@ -4,8 +4,8 @@ This is a duplicate of the [WordPress/Gutenberg](https://github.com/WordPress/gu
 
 You are currently viewing the version build from the source:
 
-* Branch: https://github.com/WordPress/gutenberg/tree/%%BRANCH%%
-* Commit: https://github.com/WordPress/gutenberg/commit/%%COMMIT%%
+* Branch: [`%%BRANCH%%`](https://github.com/WordPress/gutenberg/tree/%%BRANCH%%)
+* Commit: [WordPress/Gutenberg@`%%COMMIT%%`](https://github.com/WordPress/gutenberg/commit/%%COMMIT%%)
 
 ## Pupose
 
@@ -22,7 +22,7 @@ The process becomes:
 
 This repository contains built versions of Gutenberg from June 13, 2024 onwards. It includes:
 
-* `trunk` -- from the source commit https://github.com/WordPress/gutenberg/commit/91084bf913e14e37331fc87dbc5565aa4113b34d onwards
+* `trunk` -- from the source commit [WordPress/Gutenberg@`91084bf913`](https://github.com/WordPress/gutenberg/commit/91084bf913e14e37331fc87dbc5565aa4113b34d) onwards
 * Gutenberg plugin release branches from Gutenberg 18.6 upwards
 * WordPress release branchses from WordPress 6.7 upwards
 
