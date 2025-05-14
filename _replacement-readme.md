@@ -29,7 +29,7 @@ This repository contains built versions of Gutenberg from June 13, 2024 onwards.
 
 * `trunk` -- from the source commit [WordPress/Gutenberg@`91084bf913`](https://github.com/WordPress/gutenberg/commit/91084bf913e14e37331fc87dbc5565aa4113b34d) onwards
 * Gutenberg plugin release branches from Gutenberg 18.6 upwards
-* WordPress release branchses from WordPress 6.7 upwards
+* WordPress release branches from WordPress 6.7 upwards
 
 ## Pull requests and issues must be reported upstream
 
